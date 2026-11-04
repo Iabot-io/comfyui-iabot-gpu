@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-python -u /comfyui/main.py --disable-auto-launch --disable-metadata --listen 127.0.0.1 --port 8188 --disable-all-custom-nodes --normalvram &
+python -u /comfyui/main.py --disable-auto-launch --disable-metadata --listen 127.0.0.1 --port 8188 --disable-all-custom-nodes &
 comfy_pid=$!
 trap 'kill "$comfy_pid" 2>/dev/null || true' EXIT
 python - <<'PY'
