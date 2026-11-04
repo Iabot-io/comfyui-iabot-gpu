@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import threading
 import time
 import uuid
@@ -14,7 +15,7 @@ import requests
 import runpod
 import torch
 
-from validation import ALLOWED, validate
+from validation import ALLOWED, PROFILE, validate
 
 BASE = "http://127.0.0.1:8188"
 MAX_OUTPUT = 6 * 1024 * 1024
@@ -63,6 +64,8 @@ def execute(job):
             if image.width * image.height > 16_000_000:
                 raise ValueError("Input image dimensions exceed the limit")
             target = input_dir / (str(index) + ".png")
+            if PROFILE == 'image':
+                image.thumbnail((1280, 1280))
             image.convert("RGB").save(target)
             mapping[name] = "iabot/" + unique + "/" + target.name
         for node in workflow.values():
@@ -74,6 +77,10 @@ def execute(job):
             if node["class_type"] == "SaveVideo":
                 node["inputs"]["filename_prefix"] = "iabot/" + unique + "/video"
                 node["inputs"]["format"], node["inputs"]["codec"] = "mp4", "h264"
+            if node['class_type'] in {'SaveImage', 'SaveAudioAdvanced'}:
+                node['inputs']['filename_prefix'] = 'iabot/' + unique + '/result'
+            if node['class_type'] == 'SaveAudioAdvanced':
+                node['inputs']['format'] = 'flac'
         accepted = request("/prompt", {"prompt": workflow, "client_id": unique})
         prompt_id = accepted.get("prompt_id")
         if not prompt_id:
@@ -89,18 +96,26 @@ def execute(job):
             raise RuntimeError("GPU execution exceeded its deadline")
         if history["status"].get("status_str") != "success":
             raise RuntimeError("ComfyUI could not finish the graph: " + json.dumps(history["status"].get("messages", []))[-1200:])
-        videos = list(output_dir.rglob("*.mp4")) if output_dir.exists() else []
-        if len(videos) != 1 or videos[0].stat().st_size > MAX_OUTPUT:
-            raise RuntimeError("Expected one MP4 no larger than 6 MiB")
-        result = videos[0].read_bytes()
-        if result[4:8] != b"ftyp":
-            raise RuntimeError("The video is not an MP4")
+        suffix = '.mp4' if PROFILE == 'video' else '.png' if PROFILE == 'image' else '.flac'
+        files = list(output_dir.rglob('*' + suffix)) if output_dir.exists() else []
+        if len(files) != 1 or files[0].stat().st_size > 40 * 1024 * 1024:
+            raise RuntimeError('Expected one bounded output file')
+        if PROFILE in {'music', 'voice'}:
+            target = output_dir / 'result.mp3'
+            subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', str(files[0]), '-codec:a', 'libmp3lame', '-b:a', '128k', str(target)], check=True, timeout=60)
+            files, suffix = [target], '.mp3'
+        result = files[0].read_bytes()
+        if len(result) > MAX_OUTPUT:
+            raise RuntimeError('Output exceeds 6 MiB')
+        if PROFILE == 'video' and result[4:8] != b'ftyp' or PROFILE == 'image' and not result.startswith(b'\x89PNG\r\n\x1a\n'):
+            raise RuntimeError('Output does not match its profile')
         devices = request("/system_stats").get("devices", [])
         if not any(device.get("type") == "cuda" for device in devices):
             raise RuntimeError("ComfyUI did not report its CUDA device")
-        return {"video": base64.b64encode(result).decode(), "bytes": len(result),
+        return {"video" if PROFILE == 'video' else 'data': base64.b64encode(result).decode(), "bytes": len(result),
                 "sha256": hashlib.sha256(result).hexdigest(), "gpu": info,
-                "format": "mp4", "promptId": prompt_id, "comfyDevices": devices}
+                "format": suffix[1:], 'mime': {'video':'video/mp4','image':'image/png','music':'audio/mpeg','voice':'audio/mpeg'}[PROFILE],
+                'profile': PROFILE, "promptId": prompt_id, "comfyDevices": devices}
     finally:
         shutil.rmtree(input_dir, ignore_errors=True)
         shutil.rmtree(output_dir, ignore_errors=True)
