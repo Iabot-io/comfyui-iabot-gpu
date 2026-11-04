@@ -1,0 +1,5 @@
+{
+  "modelRevision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
+  "workflowSource": "https://github.com/Comfy-Org/workflow_templates/blob/1ae390968e323dba24a6991d1860ded051f5a79b/templates/video_wan2_2_5B_ti2v.json",
+  "weightsOnDaytona": false
+}
