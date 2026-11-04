@@ -73,8 +73,8 @@ def validate(workflow, profile=PROFILE):
                 raise ValueError('Image dimensions exceed the profile limit')
         if kind in {'EmptyFlux2LatentImage', 'Wan22ImageToVideoLatent', 'WanImageToVideo', 'EmptyAceStep1.5LatentAudio'} and values.get('batch_size') != 1:
             raise ValueError('One output per job')
-        if kind in {'Wan22ImageToVideoLatent', 'WanImageToVideo'} and (not bounded(values.get('length'), 5, 81) or (values['length'] - 1) % 4):
-            raise ValueError('Use 5 to 81 frames (4n+1)')
+        if kind in {'Wan22ImageToVideoLatent', 'WanImageToVideo'} and (not bounded(values.get('length'), 5, 161 if profile == 'video_quality' else 81) or (values['length'] - 1) % 4):
+            raise ValueError('Use 4n+1 frames, up to 81 in fast or 161 in quality')
         if kind == 'Flux2Scheduler' and not bounded(values.get('steps'), 1, 20):
             raise ValueError('Use 1 to 20 image steps')
         if kind == 'ImageScaleToTotalPixels' and not bounded(values.get('megapixels'), .05, 1):
