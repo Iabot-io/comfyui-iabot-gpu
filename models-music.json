@@ -1,0 +1,9 @@
+[
+  {
+    "name": "ace_step_1.5_turbo_aio.safetensors",
+    "folder": "checkpoints",
+    "bytes": 10025478736,
+    "sha256": "67b0f43aa5c51c840bd0228e6a935d8ff416ec87e5df2fc0637da17a561252bc",
+    "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/371bb1680f8c88d8c1083f6ffb6330d3d55bff76/checkpoints/ace_step_1.5_turbo_aio.safetensors"
+  }
+]
