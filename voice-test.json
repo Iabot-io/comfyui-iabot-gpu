@@ -1,0 +1,21 @@
+{
+  "1": {
+    "class_type": "IabotQwenVoice",
+    "inputs": {
+      "text": "Imaginamos tu espacio. Damos forma a tus ideas. Dise\u00f1amos arquitectura para vivir mejor. Hablemos de tu pr\u00f3ximo proyecto.",
+      "language": "Spanish",
+      "instruct": "Voz adulta c\u00e1lida y natural en espa\u00f1ol de Espa\u00f1a, con ligera cadencia canaria. Diccion clara, ritmo tranquilo y tono cercano para presentar un estudio de arquitectura."
+    }
+  },
+  "2": {
+    "class_type": "SaveAudioAdvanced",
+    "inputs": {
+      "audio": [
+        "1",
+        0
+      ],
+      "filename_prefix": "iabot/locucion_arquitectura",
+      "format": "flac"
+    }
+  }
+}

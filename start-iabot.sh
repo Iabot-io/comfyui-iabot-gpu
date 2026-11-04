@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-python -u /comfyui/main.py --disable-auto-launch --disable-metadata --listen 127.0.0.1 --port 8188 --disable-all-custom-nodes &
+custom=()
+if [ "${IABOT_PROFILE:-video}" = "voice" ]; then custom=(--whitelist-custom-nodes iabot_voice); fi
+python -u /comfyui/main.py --disable-auto-launch --disable-metadata --disable-api-nodes --listen 127.0.0.1 --port 8188 --disable-all-custom-nodes "${custom[@]}" &
 comfy_pid=$!
 trap 'kill "$comfy_pid" 2>/dev/null || true' EXIT
 python - <<'PY'
